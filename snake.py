@@ -1,5 +1,7 @@
 import pygame
 from random import randint
+
+from neuralnetwork import NeuralNetwork, ReLU
 from vector import Vector
 
 
@@ -9,7 +11,8 @@ class Grid(object):
         self.dimensions = dimensions
         self.cell_size = cell_size
         self.position = position
-        self.snake = Snake(self, 1, 5, 5)
+        self.snake = None
+        self.respawn()
         self.food = Food(self)
 
     def evaluate(self):
@@ -56,21 +59,35 @@ class Grid(object):
         return False
 
     def respawn(self):
-        self.snake = Snake(self, 1, 10 + randint(0, self.dimensions.x - 20), 5)
+        self.snake = Snake(self, Vector(10 + randint(0, self.dimensions.x - 20), 5), NeuralNetwork(6, 2, 16, 4, ReLU()))
 
 
 class Snake(object):
-    def __init__(self, grid: Grid, length=1, x=1, y=1):
-        self.length = length
+    def __init__(self, grid: Grid, position: Vector, brain: NeuralNetwork):
+        self.length = 1
         self.grid = grid
-        self.position = Vector(x, y)
-        self.velocity = Vector(0, 1)
+        self.position = position
+        self.velocity = Vector(0, 0)
         self.tail = []
         self.alive = True
+        self.brain = brain
+
+    def think(self):
+        idea = self.brain.forward(self.senses())[0]
+        if idea[0] > 0.7:
+            self.up()
+        if idea[1] > 0.7:
+            self.down()
+        if idea[2] > 0.7:
+            self.left()
+        if idea[3] > 0.7:
+            self.right()
 
     def move(self):
         if not self.alive:
             return
+
+        self.think()
 
         new_position = self.position.add(self.velocity)
 
@@ -115,7 +132,7 @@ class Snake(object):
     def fitness(self):
         return self.length * 10
 
-    def get_senses(self):
+    def senses(self):
         food_direction = self.position.sub(self.grid.food.position)
 
         return [
@@ -149,5 +166,12 @@ class Population(object):
         for grid in self.snake_grids:
             grid.evaluate()
 
-        # Draw the first snake (all the others are just evaluated as is.
+        # Draw the first snake (all the others are just evaluated behind the scenes
         self.snake_grids[0].draw(game, display)
+
+    def live_snakes(self):
+        alive = 0
+        for grid in self.snake_grids:
+            if grid.snake.alive:
+                alive += 1
+        return alive

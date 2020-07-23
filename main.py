@@ -4,8 +4,6 @@ import random
 from neuralnetwork import *
 from snake import Grid, Population
 
-population = Population(5, Vector(50, 50), 10, Vector(50, 50))
-
 pygame.init()
 
 white = (255, 255, 255)
@@ -50,23 +48,12 @@ def gameLoop():
     x1_change = 0
     y1_change = 0
 
-    neural_network = NeuralNetwork(6, 2, 16, 5, ReLU())
+    population = Population(5, Vector(50, 50), 10, Vector(50, 50))
 
-    network_display = NetworkDisplay(neural_network, Vector(700, 40), Vector(300, 700), 10)
+    # Display the first snakes brain in the HUD
+    network_display = NetworkDisplay(population.snake_grids[0].snake.brain, Vector(700, 40), Vector(300, 700), 10)
 
     while not game_over:
-        # Ask the neural network to evaluate the snakes senses and make a move
-        ml_input = neural_network.forward(population.snake_grids[0].snake.get_senses())[0]
-
-        if ml_input[0] > 0.5:
-            population.snake_grids[0].snake.up()
-        if ml_input[1] > 0.5:
-            population.snake_grids[0].snake.down()
-        if ml_input[2] > 0.5:
-            population.snake_grids[0].snake.left()
-        if ml_input[3] > 0.5:
-            population.snake_grids[0].snake.right()
-
         while game_close == True:
             dis.fill(blue)
             message("You Lost! Press C-Play Again or Q-Quit", red)
@@ -103,6 +90,9 @@ def gameLoop():
         dis.fill(black)
 
         show_score(population.snake_grids[0].snake.length * 10)
+
+        value = score_font.render("Live snakes: " + str(population.live_snakes()) + "/" + str(len(population.snake_grids)), True, white)
+        dis.blit(value, [200, 0])
 
         population.draw(pygame, dis)
         network_display.draw(pygame, dis)
