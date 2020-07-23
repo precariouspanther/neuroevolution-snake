@@ -19,7 +19,6 @@ class Layer(object):
     def random_layer(cls, inputs: int, neurons: int, activation):
         weights = np.random.standard_normal((inputs, neurons))
         biases = np.zeros((1, neurons))
-        print(weights)
 
         return cls(inputs, neurons, activation, weights, biases)
 
@@ -36,13 +35,16 @@ class Layer(object):
 
     def mutate(self, rate):
         def random_mutate(val, chance):
+            new_val = val
             if random() < chance:
                 # chance to replace with random -1 to 1 number
-                return random() * 2 - 1
-            return val
+                new_val = val + (random() * 2 - 1) * 0.1
+            new_val = min(1, max(-1, new_val))
+
+            return new_val
 
         new_biases = []
-        for bias in self.biases:
+        for bias in self.biases[0]:
             new_biases.append(random_mutate(bias, rate))
 
         new_weights = []
@@ -52,8 +54,8 @@ class Layer(object):
                 new_neuron_weights.append(random_mutate(weight, rate))
             new_weights.append(new_neuron_weights)
 
-        self.weights = new_weights
-        self.biases = new_biases
+        self.weights = np.array(new_weights)
+        self.biases = [new_biases]
 
 
 class InputLayer(Layer):
@@ -68,13 +70,17 @@ class ReLU:
 
 
 class NeuralNetwork(object):
-    def __init__(self, inputs: int, hidden_layers: int, hidden_nodes: int, outputs: int, activation):
-        self.layers = []
-        self.layers.append(InputLayer.random_layer(inputs, inputs, activation))
-        self.layers.append(Layer.random_layer(inputs, hidden_nodes, activation))
+    def __init__(self, layers):
+        self.layers = layers
+
+    @classmethod
+    def create(cls, inputs: int, hidden_layers: int, hidden_nodes: int, outputs: int, activation):
+        layers = [InputLayer.random_layer(inputs, inputs, activation),
+                  Layer.random_layer(inputs, hidden_nodes, activation)]
         for x in range(1, hidden_layers):
-            self.layers.append(Layer.random_layer(hidden_nodes, hidden_nodes, activation))
-        self.layers.append(Layer.random_layer(hidden_nodes, outputs, activation))
+            layers.append(Layer.random_layer(hidden_nodes, hidden_nodes, activation))
+        layers.append(Layer.random_layer(hidden_nodes, outputs, activation))
+        return cls(layers)
 
     def add_layer(self, layer: Layer):
         self.layers.append(layer)
@@ -83,6 +89,13 @@ class NeuralNetwork(object):
         for layer in self.layers:
             inputs = layer.forward(inputs)
         return inputs
+
+    def mutate(self, rate):
+        for layer in self.layers:
+            layer.mutate(rate)
+
+    def copy(self):
+        return NeuralNetwork(copy.deepcopy(self.layers))
 
 
 class NetworkDisplay(object):

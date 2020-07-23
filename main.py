@@ -48,12 +48,13 @@ def gameLoop():
     x1_change = 0
     y1_change = 0
 
-    population = Population(5, Vector(50, 50), 10, Vector(50, 50))
+    population = Population(250, Vector(50, 50), 10, Vector(50, 50))
 
     # Display the first snakes brain in the HUD
-    network_display = NetworkDisplay(population.snake_grids[0].snake.brain, Vector(700, 40), Vector(300, 700), 10)
+    network_display = NetworkDisplay(population.active_snake.snake.brain, Vector(700, 40), Vector(300, 700), 10)
 
     while not game_over:
+        network_display.network = population.active_snake.snake.brain
         while game_close == True:
             dis.fill(blue)
             message("You Lost! Press C-Play Again or Q-Quit", red)
@@ -81,7 +82,7 @@ def gameLoop():
                 elif event.key == pygame.K_DOWN:
                     population.snake_grids[0].snake.down()
                 elif event.key == pygame.K_SPACE:
-                    population.snake_grids[0].respawn()
+                    population.respawn()
 
         if x1 >= display_width or x1 < 0 or y1 >= display_height or y1 < 0:
             game_close = True
@@ -93,6 +94,9 @@ def gameLoop():
 
         value = score_font.render("Live snakes: " + str(population.live_snakes()) + "/" + str(len(population.snake_grids)), True, white)
         dis.blit(value, [200, 0])
+
+        value = score_font.render("Generation: " + str(population.generations), True, white)
+        dis.blit(value, [400, 0])
 
         population.draw(pygame, dis)
         network_display.draw(pygame, dis)
