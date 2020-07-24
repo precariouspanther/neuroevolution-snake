@@ -41,7 +41,7 @@ class Snake(object):
         self.brain = brain
         self.age = 0
         self.fitness = 0
-        self.moves = 300
+        self.moves = 300 + randint(10, 100)
         self.food = Food(self.grid, self)
 
     def think(self):

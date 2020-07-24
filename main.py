@@ -12,7 +12,7 @@ display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('smart snake')
 clock = pygame.time.Clock()
 
-font = pygame.font.SysFont(pygame.font.get_default_font(), 15)
+font = pygame.font.SysFont('bahnschrift', 15)
 
 
 def gameLoop():
@@ -43,12 +43,11 @@ def gameLoop():
                 elif event.key == pygame.K_F1:
                     save_state.save(population)
                 elif event.key == pygame.K_F2:
+                    del population
                     population = save_state.open()
+                    network_display.network = population.active_snake.brain
 
         display.fill((0, 0, 0))
-
-        value = font.render("Score: " + str(population.snakes[0].length * 10), True, (255, 255, 255))
-        display.blit(value, [0, 0])
 
         value = font.render("Live snakes: " + str(population.live_snakes()) + "/" + str(len(population.snakes)),
                             True, (255, 255, 255))

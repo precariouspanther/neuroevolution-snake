@@ -36,12 +36,12 @@ class Population(object):
             if not self.active_snake.alive:
                 max_len = 0
                 for snake2 in self.snakes:
-                    if snake2.length > max_len:
+                    if snake2.length > max_len and snake2.alive:
                         max_len = snake2.length
                         self.active_snake = snake2
+                        break
             if snake is not self.active_snake:
                 snake.draw(pygame, display, snake is self.active_snake)
-
         if self.live_snakes() is 0:
             # all sneks ded. :'(
             self.next_generation()
@@ -87,6 +87,7 @@ class Population(object):
             self.snakes.append(Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), child_brain))
 
         self.generations += 1
+        self.active_snake = self.snakes[0]
 
     def select_parent(self, total_fitness, snakes):
         rand_fitness = random() * total_fitness
