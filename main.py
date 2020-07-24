@@ -1,78 +1,36 @@
-import pygame
-import time
-import random
 from neuralnetwork import *
 from population import Population
-from snake import Grid
+from save import SaveState
 
 pygame.init()
-
-white = (255, 255, 255)
-yellow = (255, 255, 102)
-black = (0, 0, 0)
-red = (213, 50, 80)
-green = (0, 255, 0)
-blue = (50, 153, 213)
 
 display_width = 1100
 display_height = 1000
 
-dis = pygame.display.set_mode((display_width, display_height))
-pygame.display.set_caption('smart snake')
+display = pygame.display.set_mode((display_width, display_height))
 
+pygame.display.set_caption('smart snake')
 clock = pygame.time.Clock()
 
-snake_block = 20
-snake_speed = 25
-
-font_style = pygame.font.SysFont("bahnschrift", 25)
-score_font = pygame.font.SysFont("bahnschrift", 15)
-
-
-def show_score(score):
-    value = score_font.render("Score: " + str(score), True, white)
-    dis.blit(value, [0, 0])
-
-
-def message(msg, color):
-    mesg = font_style.render(msg, True, color)
-    dis.blit(mesg, [display_width / 6, display_height / 3])
+font = pygame.font.SysFont(pygame.font.get_default_font(), 15)
 
 
 def gameLoop():
-    game_over = False
-    game_close = False
-
-    x1 = display_width / 2
-    y1 = display_height / 2
-
-    x1_change = 0
-    y1_change = 0
+    exit_game = False
 
     population = Population(1000, Vector(50, 50), 10, Vector(50, 50))
+
+    save_state = SaveState('saved-population.dat')
 
     # Display the first snakes brain in the HUD
     network_display = NetworkDisplay(population.active_snake.brain, Vector(700, 80), Vector(300, 800), 10)
 
-    while not game_over:
+    while not exit_game:
         network_display.network = population.active_snake.brain
-        while game_close == True:
-            dis.fill(blue)
-            message("You Lost! Press C-Play Again or Q-Quit", red)
-            show_score(population.snakes[0].length * 10)
-            pygame.display.update()
-
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
-                        game_over = True
-                        game_close = False
-                    if event.key == pygame.K_c:
-                        gameLoop()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                game_over = True
+                exit_game = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     population.snakes[0].left()
@@ -82,33 +40,34 @@ def gameLoop():
                     population.snakes[0].up()
                 elif event.key == pygame.K_DOWN:
                     population.snakes[0].down()
+                elif event.key == pygame.K_F1:
+                    save_state.save(population)
+                elif event.key == pygame.K_F2:
+                    population = save_state.open()
 
-        if x1 >= display_width or x1 < 0 or y1 >= display_height or y1 < 0:
-            game_close = True
-        x1 += x1_change
-        y1 += y1_change
-        dis.fill(black)
+        display.fill((0, 0, 0))
 
-        show_score(population.snakes[0].length * 10)
+        value = font.render("Score: " + str(population.snakes[0].length * 10), True, (255, 255, 255))
+        display.blit(value, [0, 0])
 
-        value = score_font.render("Live snakes: " + str(population.live_snakes()) + "/" + str(len(population.snakes)),
-                                  True, white)
-        dis.blit(value, [200, 0])
+        value = font.render("Live snakes: " + str(population.live_snakes()) + "/" + str(len(population.snakes)),
+                            True, (255, 255, 255))
+        display.blit(value, [200, 0])
 
-        value = score_font.render("Best score: " + str(population.best_score), True, white)
-        dis.blit(value, [400, 0])
+        value = font.render("Best score: " + str(population.best_score), True, (255, 255, 255))
+        display.blit(value, [400, 0])
 
-        value = score_font.render("Generation: " + str(population.generations), True, white)
-        dis.blit(value, [600, 0])
+        value = font.render("Generation: " + str(population.generations), True, (255, 255, 255))
+        display.blit(value, [600, 0])
 
-        value = score_font.render("Max Length: " + str(population.best_length), True, white)
-        dis.blit(value, [800, 0])
+        value = font.render("Max Length: " + str(population.best_length), True, (255, 255, 255))
+        display.blit(value, [800, 0])
 
-        population.draw(pygame, dis)
-        network_display.draw(pygame, dis)
+        population.draw(pygame, display)
+        network_display.draw(pygame, display)
 
         pygame.display.update()
-        clock.tick(snake_speed)
+        clock.tick(25)
 
     pygame.quit()
     quit()
