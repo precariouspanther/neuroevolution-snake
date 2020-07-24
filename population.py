@@ -18,7 +18,8 @@ class Population(object):
         self.position = position
         self.generations = 1
         self.grid = Grid(grid_size, position, cell_size)
-        self.snakes = [Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5),
+        self.snakes = [Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20),
+                                               10 + randint(0, self.grid.dimensions.y - 20)),
                              NeuralNetwork.create(10, 2, 20, 4, ReLU())) for x in range(0, snake_count)]
         self.active_snake = self.snakes[0]
         self.all_time_best_snake = self.active_snake
@@ -84,7 +85,8 @@ class Population(object):
             father = self.select_parent(total_fitness, snakes)
             child_brain = mother.brain.crossover(father.brain)
             child_brain.mutate(0.05)
-            self.snakes.append(Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), child_brain))
+            self.snakes.append(Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20),
+                                                       10 + randint(0, self.grid.dimensions.y - 20)), child_brain))
 
         self.generations += 1
         self.active_snake = self.snakes[0]
