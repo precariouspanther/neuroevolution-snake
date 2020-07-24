@@ -13,3 +13,9 @@ class Vector(object):
 
     def add(self, vector):
         return Vector(self.x + vector.x, self.y + vector.y)
+
+    def copy(self):
+        return Vector(self.x, self.y)
+
+    def __repr__(self):
+        return str(self.x) + " - " + str(self.y)

@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 import pygame
-from random import random
+from random import random, randint
 from vector import Vector
 
 
@@ -38,7 +38,7 @@ class Layer(object):
             new_val = val
             if random() < chance:
                 # chance to replace with random -1 to 1 number
-                new_val = val + (random() * 2 - 1) * 0.1
+                new_val = val + (random() * 2 - 1) * 0.5
             new_val = min(1, max(-1, new_val))
 
             return new_val
@@ -56,6 +56,34 @@ class Layer(object):
 
         self.weights = np.array(new_weights)
         self.biases = [new_biases]
+
+    def crossover(self, father):
+        child = self.copy()
+        new_biases = []
+        father_bias_start = randint(0, len(self.biases[0]))
+
+        for i, bias in enumerate(self.biases[0]):
+            if i >= father_bias_start:
+                new_biases.append(father.biases[0][i])
+            else:
+                new_biases.append(bias)
+
+        new_weights = []
+
+        for w, neuron_weights in enumerate(self.weights):
+            father_weight_start = randint(0, len(neuron_weights))
+            new_neuron_weights = []
+            for i, weight in enumerate(neuron_weights):
+                if i >= father_weight_start:
+                    new_neuron_weights.append(father.weights[w][i])
+                else:
+                    new_neuron_weights.append(weight)
+            new_weights.append(new_neuron_weights)
+
+        child.weights = np.array(new_weights)
+        child.biases = np.array([new_biases])
+
+        return child
 
 
 class InputLayer(Layer):
@@ -96,6 +124,12 @@ class NeuralNetwork(object):
 
     def copy(self):
         return NeuralNetwork(copy.deepcopy(self.layers))
+
+    def crossover(self, father):
+        child = self.copy()
+        for i, layer in enumerate(child.layers):
+            layer.crossover(father.layers[i])
+        return child
 
 
 class NetworkDisplay(object):
