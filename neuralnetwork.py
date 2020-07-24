@@ -38,7 +38,7 @@ class Layer(object):
             new_val = val
             if random() < chance:
                 # chance to replace with random -1 to 1 number
-                new_val = val + (random() * 2 - 1) * 0.5
+                new_val = val + ((random() * 2 - 1) / 5)
             new_val = min(1, max(-1, new_val))
 
             return new_val

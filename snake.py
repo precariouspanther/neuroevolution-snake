@@ -13,7 +13,6 @@ class Grid(object):
         self.dimensions = dimensions
         self.cell_size = cell_size
         self.position = position
-        self.respawn()
 
     def draw(self, game: pygame, display):
         total_width = (self.cell_size + 2) * self.dimensions.x
@@ -29,10 +28,6 @@ class Grid(object):
             self.cell_size,
             self.cell_size
         ]
-
-    def respawn(self):
-        self.snake = Snake(self, Vector(10 + randint(0, self.dimensions.x - 20), 5),
-                           NeuralNetwork.create(10, 2, 20, 4, ReLU()))
 
 
 class Snake(object):
@@ -91,7 +86,7 @@ class Snake(object):
 
     def grow(self):
         self.length += 1
-        self.moves += 100
+        self.moves += 200
 
     def die(self):
         self.fitness = self.calculate_fitness()
@@ -122,10 +117,22 @@ class Snake(object):
             # Short snake. Focus on growth (without crashing)
             return self.age * pow(2, self.length)
         # Long snake. Emphasise staying alive with incremental growth
-        return pow(self.age, 2) * pow(2, 10) * (self.length - 9)
+        return self.age * pow(2, self.length)
 
     def senses(self):
-        food_direction = self.position.sub(self.food.position)
+        #food_direction = self.position.sub(self.food.position)
+        food_up = 0
+        food_down = 0
+        food_left = 0
+        food_right = 0
+        if self.food.position.x > self.position.x:
+            food_right = 1
+        elif self.food.position.x < self.position.x:
+            food_left = 1
+        if self.food.position.y > self.position.y:
+            food_down = 1
+        elif self.food.position.y < self.position.y:
+            food_up = 1
 
         # Scan for collisions within 10 cells in each direction
         directions = [
@@ -137,26 +144,29 @@ class Snake(object):
 
         for i, direction in enumerate(directions):
             ray = self.position.copy()
-            for x in range(0, 10):
+            for x in range(0, 20):
                 ray = ray.add(direction)
                 if self.is_collision(ray):
                     # Collision found. Record it
-                    directions[i] = self.position.sub(ray)
+                    if ray.x + ray.y > self.position.x + self.position.y:
+                        directions[i] = ray.sub(self.position)
+                    else:
+                        directions[i] = self.position.sub(ray)
                     break
                 elif x is 9:
                     # No collision within 10 cells. Mark safe
-                    directions[i] = Vector(10, 10)
+                    directions[i] = Vector(20, 20)
         return [
-            food_direction.x / self.grid.dimensions.x,
-            food_direction.y / self.grid.dimensions.y,
+            food_up,
+            food_down,
+            food_left,
+            food_right,
             self.velocity.x,
             self.velocity.y,
-            self.position.x / self.grid.dimensions.x,
-            self.position.y / self.grid.dimensions.y,
-            directions[0].x / 10,
-            directions[1].x / 10,
-            directions[2].y / 10,
-            directions[3].y / 10,
+            1 - (directions[0].x / 20),
+            1 - (directions[1].x / 20),
+            1 - (directions[2].y / 20),
+            1 - (directions[3].y / 20),
         ]
 
     def is_collision(self, position: Vector):
@@ -195,4 +205,3 @@ class Food(object):
             self.position = Vector(randint(1, self.grid.dimensions.x - 1), randint(1, self.grid.dimensions.y - 1))
             if not self.snake.is_collision(self.position):
                 return
-
