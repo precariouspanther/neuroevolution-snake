@@ -25,6 +25,11 @@ class Population(object):
         self.all_time_best_snake = self.active_snake
         self.history = []
 
+        def noop():
+            pass
+
+        self.on_generation = noop
+
     def draw(self, game: pygame, display):
 
         self.grid.draw(pygame, display)
@@ -95,6 +100,7 @@ class Population(object):
 
         self.generations += 1
         self.active_snake = self.snakes[0]
+        self.on_generation()
 
     def select_parent(self, total_fitness, snakes):
         rand_fitness = random() * total_fitness
@@ -104,3 +110,17 @@ class Population(object):
             if sum > rand_fitness:
                 return snake
         return snakes[0]
+
+    def save_data(self):
+        return (
+            self.snakes, self.history, self.best_length, self.best_score, self.generations, self.all_time_best_snake,
+            self.active_snake)
+
+    def load_data(self, data):
+        self.snakes = data[0]
+        self.history = data[1]
+        self.best_length = data[2]
+        self.best_score = data[3]
+        self.generations = data[4]
+        self.all_time_best_snake = data[5]
+        self.active_snake = data[6]
