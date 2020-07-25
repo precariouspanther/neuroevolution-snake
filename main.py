@@ -25,7 +25,8 @@ def gameLoop():
 
     # Display the first snakes brain in the HUD
     network_display = NetworkDisplay(population.active_snake.brain, Vector(700, 80), Vector(300, 800), 10)
-
+    # Display generation history
+    gen_graph = Graph()
     while not exit_game:
         network_display.network = population.active_snake.brain
 
@@ -47,9 +48,6 @@ def gameLoop():
                     del population
                     population = save_state.open()
                     network_display.network = population.active_snake.brain
-                elif event.key == pygame.K_F5:
-                    graph = Graph()
-                    graph.draw(population.history)
 
         display.fill((0, 0, 0))
 
@@ -68,6 +66,10 @@ def gameLoop():
 
         population.draw(pygame, display)
         network_display.draw(pygame, display)
+
+        g = gen_graph.draw(population.history)
+        display.blit(g, (200, 700))
+
 
         pygame.display.update()
         clock.tick(25)
