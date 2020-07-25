@@ -67,8 +67,10 @@ class Game(object):
             value = self.font.render("Generation: " + str(self.population.generations), True, (255, 255, 255))
             self.display.blit(value, [700, 0])
 
-            value = self.font.render("Max Length: " + str(self.population.best_length), True, (255, 255, 255))
-            self.display.blit(value, [800, 0])
+            value = self.font.render(
+                "Length: " + str(self.population.active_snake.length) + " / " + str(self.population.best_length), True,
+                (255, 255, 255))
+            self.display.blit(value, [850, 0])
 
             self.population.draw(pygame, self.display)
             network_display.draw(pygame, self.display)
