@@ -13,24 +13,16 @@ class Graph(object):
 
         self.ax = self.fig.add_subplot(111)
         self.ax.set_yscale("log")
-        #self.fig.set_facecolor((0, 0, 0))
-        #self.ax.set_facecolor((0.31, 0.31, 0.31))
 
         self.canvas = agg.FigureCanvasAgg(self.fig)
         self.fig.tight_layout()
 
-    def draw(self, data):
-        generations = []
-        scores = []
-        for i, score in enumerate(data):
-            generations.append(i)
-            scores.append(score)
-
+    def draw(self, data, xlabel: str, ylabel: str, yscale: str = "log"):
         self.ax.clear()
 
-        self.ax.set_xlabel("Generation", color='k', labelpad=10)
-        self.ax.set_ylabel("Fitness", rotation=270, color='k', labelpad=15)
-        self.ax.set_yscale("log")
+        self.ax.set_xlabel(xlabel, color='k', labelpad=10)
+        self.ax.set_ylabel(ylabel, rotation=270, color='k', labelpad=15)
+        self.ax.set_yscale(yscale)
 
         self.ax.plot(data)
         self.fig.tight_layout()

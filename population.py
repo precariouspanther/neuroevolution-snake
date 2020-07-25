@@ -1,3 +1,4 @@
+import time
 from copy import deepcopy
 from random import randint, random
 
@@ -10,6 +11,8 @@ from vector import Vector
 
 class Population(object):
     def __init__(self, snake_count: int, grid_size: Vector, cell_size: int, position: Vector):
+        self.start_time = time.time()
+        self.duration = 0
         self.best_length = 0
         self.best_score = 0
         self.snake_count = snake_count
@@ -48,6 +51,7 @@ class Population(object):
                         self.active_snake = snake2
             if snake is not self.active_snake:
                 snake.draw(pygame, display, snake is self.active_snake)
+
         if self.live_snakes() is 0:
             # all sneks ded. :'(
             self.next_generation()
@@ -66,36 +70,45 @@ class Population(object):
         snakes.sort(key=lambda snake: snake.fitness, reverse=True)
 
         best_snake = snakes[0]
+        worst_snake = snakes[:-1][0]
         if best_snake.fitness > self.best_score:
             self.best_score = best_snake.fitness
             self.all_time_best_snake = deepcopy(best_snake)
 
-        self.history.append(self.best_score)
+        self.history.append(
+            {"score": self.best_score, "length": self.best_length, "duration": int(time.time() - self.start_time)})
+
+        # Reset timer
+        self.start_time = time.time()
+
         # Discard worst snakes
-        snakes = snakes[0:400]
+        snakes = snakes[0:100]
 
         # normalise fitness scores
         top_fitness = best_snake.fitness
+        min_fitness = worst_snake.fitness
         total_fitness = 0
         for snake in snakes:
+            snake.fitness -= min_fitness
             snake.fitness /= top_fitness
             total_fitness += snake.fitness
 
         # Next generation snakes. A clone of the best from the last generation and all time
         # best are always included
         self.snakes = [
-            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), best_snake.brain),
-            self.all_time_best_snake
+            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), best_snake.brain, 1),
+            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), self.all_time_best_snake.brain, 1)
         ]
 
         # Baby snakes!
         for i in range(0, self.snake_count - 2):
             mother = self.select_parent(total_fitness, snakes)
             father = self.select_parent(total_fitness, snakes)
+            new_length = int((mother.length + father.length) / 8)
             child_brain = mother.brain.crossover(father.brain)
             child_brain.mutate(0.05)
             self.snakes.append(Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20),
-                                                       10 + randint(0, self.grid.dimensions.y - 20)), child_brain))
+                                                       10 + randint(0, self.grid.dimensions.y - 20)), child_brain, 1))
 
         self.generations += 1
         self.active_snake = self.snakes[0]
