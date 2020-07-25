@@ -23,6 +23,7 @@ class Population(object):
                              NeuralNetwork.create(10, 2, 20, 4, ReLU())) for x in range(0, snake_count)]
         self.active_snake = self.snakes[0]
         self.all_time_best_snake = self.active_snake
+        self.history = []
 
     def draw(self, game: pygame, display):
 
@@ -64,6 +65,10 @@ class Population(object):
         if best_snake.fitness > self.best_score:
             self.best_score = best_snake.fitness
             self.all_time_best_snake = deepcopy(best_snake)
+
+        self.history.append(self.best_score)
+        # Discard worst snakes
+        snakes = snakes[0:400]
 
         # normalise fitness scores
         top_fitness = best_snake.fitness

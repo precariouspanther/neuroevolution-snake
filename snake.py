@@ -1,4 +1,5 @@
 import copy
+import time
 
 import pygame
 from random import randint, random
@@ -41,8 +42,8 @@ class Snake(object):
         self.brain = brain
         self.age = 0
         self.fitness = 0
-        self.moves = 300 + randint(10, 100)
         self.food = Food(self.grid, self)
+        self.last_meal = time.time()
 
     def think(self):
         idea = self.brain.forward(self.senses())[0]
@@ -59,7 +60,6 @@ class Snake(object):
         if not self.alive:
             return
         self.age += 1
-        self.moves -= 1
 
         if self.position.equals(self.food.position):
             # Nom.
@@ -75,7 +75,7 @@ class Snake(object):
             self.die()
             return
         # Died of boredom...
-        if self.moves < 0:
+        if time.time() - self.last_meal > 10:
             self.die()
             return
 
@@ -86,7 +86,7 @@ class Snake(object):
 
     def grow(self):
         self.length += 1
-        self.moves += 200
+        self.last_meal = time.time()
 
     def die(self):
         self.fitness = self.calculate_fitness()
@@ -113,9 +113,9 @@ class Snake(object):
         self.velocity = Vector(1, 0)
 
     def calculate_fitness(self):
-        if self.length < 10:
+        #if self.length < 10:
             # Short snake. Focus on growth (without crashing)
-            return self.age * pow(2, self.length)
+            #return self.age * pow(2, self.length)
         # Long snake. Emphasise staying alive with incremental growth
         return self.age * pow(2, self.length)
 

@@ -1,3 +1,4 @@
+from graph import Graph
 from neuralnetwork import *
 from population import Population
 from save import SaveState
@@ -46,6 +47,9 @@ def gameLoop():
                     del population
                     population = save_state.open()
                     network_display.network = population.active_snake.brain
+                elif event.key == pygame.K_F5:
+                    graph = Graph()
+                    graph.draw(population.history)
 
         display.fill((0, 0, 0))
 
@@ -57,7 +61,7 @@ def gameLoop():
         display.blit(value, [400, 0])
 
         value = font.render("Generation: " + str(population.generations), True, (255, 255, 255))
-        display.blit(value, [600, 0])
+        display.blit(value, [700, 0])
 
         value = font.render("Max Length: " + str(population.best_length), True, (255, 255, 255))
         display.blit(value, [800, 0])
