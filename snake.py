@@ -32,8 +32,8 @@ class Grid(object):
 
 
 class Snake(object):
-    def __init__(self, grid: Grid, position: Vector, brain: NeuralNetwork):
-        self.length = 1
+    def __init__(self, grid: Grid, position: Vector, brain: NeuralNetwork, length=1):
+        self.length = max(1, length)
         self.grid = grid
         self.position = position
         self.velocity = Vector(0, 0)
@@ -41,6 +41,7 @@ class Snake(object):
         self.alive = True
         self.brain = brain
         self.age = 0
+        self.start_time = time.time()
         self.fitness = 0
         self.food = Food(self.grid, self)
         self.last_meal = time.time()
@@ -75,7 +76,7 @@ class Snake(object):
             self.die()
             return
         # Died of boredom...
-        if time.time() - self.last_meal > 10:
+        if time.time() - self.last_meal > 5:
             self.die()
             return
 
@@ -113,28 +114,18 @@ class Snake(object):
         self.velocity = Vector(1, 0)
 
     def calculate_fitness(self):
-        #if self.length < 10:
-            # Short snake. Focus on growth (without crashing)
-            #return self.age * pow(2, self.length)
-        # Long snake. Emphasise staying alive with incremental growth
-        return self.age * pow(2, self.length)
+        # Age in seconds. The longer you live, the better your fitness
+        age_in_seconds = int(time.time() - self.start_time)
+        fitness = age_in_seconds
+
+        if self.length > 5:
+            # After reaching at least a length of 5, bonus fitness for speed in collecting food.
+            fitness += int(self.length / age_in_seconds)
+
+        return fitness
 
     def senses(self):
-        #food_direction = self.position.sub(self.food.position)
-        food_up = 0
-        food_down = 0
-        food_left = 0
-        food_right = 0
-        if self.food.position.x > self.position.x:
-            food_right = 1
-        elif self.food.position.x < self.position.x:
-            food_left = 1
-        if self.food.position.y > self.position.y:
-            food_down = 1
-        elif self.food.position.y < self.position.y:
-            food_up = 1
-
-        # Scan for collisions within 10 cells in each direction
+        # Scan for collisions within 50 cells in each direction
         directions = [
             Vector(-1, 0),
             Vector(1, 0),
@@ -144,7 +135,7 @@ class Snake(object):
 
         for i, direction in enumerate(directions):
             ray = self.position.copy()
-            for x in range(0, 10):
+            for x in range(0, 50):
                 ray = ray.add(direction)
                 if self.is_collision(ray):
                     # Collision found. Record it
@@ -153,20 +144,20 @@ class Snake(object):
                     else:
                         directions[i] = self.position.sub(ray)
                     break
-                elif x is 9:
+                elif x is 49:
                     # No collision within 10 cells. Mark safe
-                    directions[i] = Vector(20, 20)
+                    directions[i] = Vector(50, 50)
         return [
-            food_up,
-            food_down,
-            food_left,
-            food_right,
+            self.food.position.y < self.position.y,
+            self.food.position.y > self.position.y,
+            self.food.position.x < self.position.x,
+            self.food.position.x > self.position.x,
             self.velocity.x,
             self.velocity.y,
-            1 - (directions[0].x / 20),
-            1 - (directions[1].x / 20),
-            1 - (directions[2].y / 20),
-            1 - (directions[3].y / 20),
+            1 - (directions[0].x / 50),
+            1 - (directions[1].x / 50),
+            1 - (directions[2].y / 50),
+            1 - (directions[3].y / 50),
         ]
 
     def is_collision(self, position: Vector):
