@@ -144,7 +144,7 @@ class Snake(object):
 
         for i, direction in enumerate(directions):
             ray = self.position.copy()
-            for x in range(0, 20):
+            for x in range(0, 10):
                 ray = ray.add(direction)
                 if self.is_collision(ray):
                     # Collision found. Record it
