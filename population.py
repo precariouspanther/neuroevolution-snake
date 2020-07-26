@@ -21,7 +21,7 @@ class Population(object):
         self.grid = Grid(grid_size, position, cell_size)
         self.snakes = [Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20),
                                                10 + randint(0, self.grid.dimensions.y - 20)),
-                             NeuralNetwork.create(10, 2, 24, 4, ReLU())) for x in range(0, snake_count)]
+                             NeuralNetwork.create(10, 2, 20, 4, ReLU())) for x in range(0, snake_count)]
         self.active_snake = self.snakes[0]
         self.all_time_best_snake = self.active_snake
         self.history = []
@@ -65,8 +65,8 @@ class Population(object):
             self.best_score = best_snake.fitness
             self.all_time_best_snake = deepcopy(best_snake)
 
-        # Discard worst snakes
-        snakes = snakes[0:200]
+        # Discard 50% worst snakes
+        snakes = snakes[0:int(len(self.snakes) / 2)]
 
         # normalise fitness scores
         top_fitness = best_snake.fitness

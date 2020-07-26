@@ -25,7 +25,7 @@ class Snake(object):
         self.brain = brain
         self.age = 0
         self.start_time = time.time()
-        self.hunger = 10  # will starve in 10 seconds if we don't eat!
+        self.hunger = 200
         self.fitness = 0
         self.food = Food(self.grid, self)
 
@@ -51,11 +51,12 @@ class Snake(object):
         if not self.alive:
             return
         self.age += 1
+        self.hunger -= 1
 
         if self.position.equals(self.food.position):
             # Nom.
             self.grow()
-            self.hunger += 5
+            self.hunger += 100
             self.food.move()
 
         self.think()
@@ -67,7 +68,7 @@ class Snake(object):
             self.die()
             return
         # Died of hunger...
-        if time.time() - self.start_time > self.hunger:
+        if self.hunger < 0:
             self.die()
             return
 
@@ -104,13 +105,17 @@ class Snake(object):
         self.velocity = Vector(1, 0)
 
     def calculate_fitness(self):
+        if self.length is 1:
+            return 0
+
         # Age in seconds. The longer you live, the better your fitness
         age_in_seconds = int(time.time() - self.start_time)
-        fitness = age_in_seconds
+        fitness = self.age / 50
+        fitness += pow(self.length, 2)
 
         if self.length > 3:
             # After reaching at least a length of 3, bonus fitness for speed in collecting food.
-            fitness += int(self.length / age_in_seconds) * 2
+            fitness += pow(int(self.length / age_in_seconds), 2)
 
         return fitness
 

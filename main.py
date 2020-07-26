@@ -50,15 +50,7 @@ class Game(object):
                 if event.type == pygame.QUIT:
                     exit_game = True
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self.population.snakes[0].left()
-                    elif event.key == pygame.K_RIGHT:
-                        self.population.snakes[0].right()
-                    elif event.key == pygame.K_UP:
-                        self.population.snakes[0].up()
-                    elif event.key == pygame.K_DOWN:
-                        self.population.snakes[0].down()
-                    elif event.key == pygame.K_F1:
+                    if event.key == pygame.K_F1:
                         save_state.save(self.population.save_data())
                     elif event.key == pygame.K_SPACE:
                         if self.pause:
