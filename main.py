@@ -1,6 +1,7 @@
 from graph import Graph
 from neuralnetwork import *
 from population import Population
+from renderer import Renderer
 from save import SaveState
 
 
@@ -20,6 +21,7 @@ class Game(object):
         self.duration_graph = None
         self.population = Population(1000, Vector(50, 50), 10, Vector(50, 50))
         self.pause = False
+        self.renderer = Renderer(pygame, self.display, self.population, 10, Vector(50, 50))
 
     def refresh_graphs(self):
         self.fitness_graph = self.graph_writer.draw([x['score'] for x in self.population.history], "Generation",
@@ -87,7 +89,7 @@ class Game(object):
 
             if not self.pause:
                 self.population.move()
-            self.population.draw(pygame, self.display)
+            self.renderer.draw()
             network_display.draw(pygame, self.display)
 
             self.display.blit(self.fitness_graph, (1200, 50))

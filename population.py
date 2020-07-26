@@ -2,8 +2,6 @@ import time
 from copy import deepcopy
 from random import randint, random
 
-import pygame
-
 from neuralnetwork import NeuralNetwork, ReLU
 from snake import Snake, Grid
 from vector import Vector
@@ -32,14 +30,6 @@ class Population(object):
             pass
 
         self.on_generation = noop
-
-    def draw(self, game: pygame, display):
-        self.grid.draw(game, display)
-        for snake in self.snakes:
-            if snake is not self.active_snake:
-                snake.draw(game, display, False)
-
-        self.active_snake.draw(game, display, True)
 
     def move(self):
         for snake in self.snakes:

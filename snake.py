@@ -1,7 +1,5 @@
-import copy
 import time
 
-import pygame
 from random import randint, random
 
 from neuralnetwork import NeuralNetwork, ReLU
@@ -14,21 +12,6 @@ class Grid(object):
         self.dimensions = dimensions
         self.cell_size = cell_size
         self.position = position
-
-    def draw(self, game: pygame, display):
-        total_width = (self.cell_size + 2) * self.dimensions.x
-        total_height = (self.cell_size + 2) * self.dimensions.y
-        pygame.draw.rect(display, (255, 0, 255),
-                         [self.position.x - 2, self.position.y - 2, total_width + 4, total_height + 4])
-        pygame.draw.rect(display, (80, 80, 80), [self.position.x, self.position.y, total_width, total_height])
-
-    def cell_to_rect(self, position: Vector):
-        return [
-            self.position.x + (position.x * (self.cell_size + 2)) + 1,
-            self.position.y + (position.y * (self.cell_size + 2)) + 1,
-            self.cell_size,
-            self.cell_size
-        ]
 
 
 class Snake(object):
@@ -185,19 +168,6 @@ class Snake(object):
         if position.x > self.grid.dimensions.x - 1 or position.y > self.grid.dimensions.y - 1:
             return True
         return False
-
-    def draw(self, game: pygame, display, focus: bool):
-        snake_colour = (0, 255, 255)
-        food_colour = (255, 0, 255)
-        if not focus:
-            snake_colour = (0, 120, 120)
-            food_colour = (120, 0, 120)
-        if not self.alive:
-            return
-        for segment in self.tail:
-            pygame.draw.rect(display, snake_colour, self.grid.cell_to_rect(segment))
-        # Food
-        pygame.draw.rect(display, food_colour, self.grid.cell_to_rect(self.food.position))
 
 
 class Food(object):
