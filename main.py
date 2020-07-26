@@ -19,6 +19,7 @@ class Game(object):
         self.length_graph = None
         self.duration_graph = None
         self.population = Population(1000, Vector(50, 50), 10, Vector(50, 50))
+        self.pause = False
 
     def refresh_graphs(self):
         self.fitness_graph = self.graph_writer.draw([x['score'] for x in self.population.history], "Generation",
@@ -57,6 +58,11 @@ class Game(object):
                         self.population.snakes[0].down()
                     elif event.key == pygame.K_F1:
                         save_state.save(self.population.save_data())
+                    elif event.key == pygame.K_SPACE:
+                        if self.pause:
+                            self.pause = False
+                        else:
+                            self.pause = True
                     elif event.key == pygame.K_F2:
                         self.population.load_data(save_state.open())
                         network_display.network = self.population.active_snake.brain
@@ -79,6 +85,8 @@ class Game(object):
                 (255, 255, 255))
             self.display.blit(value, [950, 0])
 
+            if not self.pause:
+                self.population.move()
             self.population.draw(pygame, self.display)
             network_display.draw(pygame, self.display)
 

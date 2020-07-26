@@ -34,9 +34,14 @@ class Population(object):
         self.on_generation = noop
 
     def draw(self, game: pygame, display):
+        self.grid.draw(game, display)
+        for snake in self.snakes:
+            if snake is not self.active_snake:
+                snake.draw(game, display, False)
 
-        self.grid.draw(pygame, display)
+        self.active_snake.draw(game, display, True)
 
+    def move(self):
         for snake in self.snakes:
             snake.move()
 
@@ -49,14 +54,10 @@ class Population(object):
                     if snake2.length > max_len and snake2.alive:
                         max_len = snake2.length
                         self.active_snake = snake2
-            if snake is not self.active_snake:
-                snake.draw(pygame, display, snake is self.active_snake)
 
         if self.live_snakes() is 0:
             # all sneks ded. :'(
             self.next_generation()
-        # Draw the first snake
-        self.active_snake.draw(game, display, True)
 
     def live_snakes(self):
         alive = 0
@@ -70,45 +71,43 @@ class Population(object):
         snakes.sort(key=lambda snake: snake.fitness, reverse=True)
 
         best_snake = snakes[0]
-        worst_snake = snakes[:-1][0]
         if best_snake.fitness > self.best_score:
             self.best_score = best_snake.fitness
             self.all_time_best_snake = deepcopy(best_snake)
 
+        # Discard worst snakes
+        snakes = snakes[0:200]
+
+        # normalise fitness scores
+        top_fitness = best_snake.fitness
+        top_length = 0
+        total_fitness = 0
+        for snake in snakes:
+            top_length = max(snake.length, top_length)
+            snake.fitness /= top_fitness
+            total_fitness += snake.fitness
+
         self.history.append(
-            {"score": self.best_score, "length": self.best_length, "duration": int(time.time() - self.start_time)})
+            {"score": top_fitness, "length": top_length, "duration": int(time.time() - self.start_time)})
 
         # Reset timer
         self.start_time = time.time()
 
-        # Discard worst snakes
-        snakes = snakes[0:100]
-
-        # normalise fitness scores
-        top_fitness = best_snake.fitness
-        min_fitness = worst_snake.fitness
-        total_fitness = 0
-        for snake in snakes:
-            snake.fitness -= min_fitness
-            snake.fitness /= top_fitness
-            total_fitness += snake.fitness
-
         # Next generation snakes. A clone of the best from the last generation and all time
         # best are always included
         self.snakes = [
-            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), best_snake.brain, 1),
-            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), self.all_time_best_snake.brain, 1)
+            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), best_snake.brain),
+            Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20), 5), self.all_time_best_snake.brain)
         ]
 
         # Baby snakes!
         for i in range(0, self.snake_count - 2):
             mother = self.select_parent(total_fitness, snakes)
             father = self.select_parent(total_fitness, snakes)
-            new_length = int((mother.length + father.length) / 8)
             child_brain = mother.brain.crossover(father.brain)
             child_brain.mutate(0.05)
             self.snakes.append(Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20),
-                                                       10 + randint(0, self.grid.dimensions.y - 20)), child_brain, 1))
+                                                       10 + randint(0, self.grid.dimensions.y - 20)), child_brain))
 
         self.generations += 1
         self.active_snake = self.snakes[0]
@@ -116,6 +115,9 @@ class Population(object):
 
     def select_parent(self, total_fitness, snakes):
         rand_fitness = random() * total_fitness
+        if random() > 0.5:
+            # Additional bias towards stronger parents
+            rand_fitness /= 2
         sum = 0
         for snake in snakes:
             sum += snake.fitness

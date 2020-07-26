@@ -42,9 +42,9 @@ class Snake(object):
         self.brain = brain
         self.age = 0
         self.start_time = time.time()
+        self.hunger = 10  # will starve in 10 seconds if we don't eat!
         self.fitness = 0
         self.food = Food(self.grid, self)
-        self.last_meal = time.time()
 
     def think(self):
         idea = self.brain.forward(self.senses())[0]
@@ -65,6 +65,7 @@ class Snake(object):
         if self.position.equals(self.food.position):
             # Nom.
             self.grow()
+            self.hunger += 5
             self.food.move()
 
         self.think()
@@ -75,8 +76,8 @@ class Snake(object):
         if self.is_collision(new_position):
             self.die()
             return
-        # Died of boredom...
-        if time.time() - self.last_meal > 5:
+        # Died of hunger...
+        if time.time() - self.start_time > self.hunger:
             self.die()
             return
 
@@ -87,7 +88,6 @@ class Snake(object):
 
     def grow(self):
         self.length += 1
-        self.last_meal = time.time()
 
     def die(self):
         self.fitness = self.calculate_fitness()
@@ -118,9 +118,9 @@ class Snake(object):
         age_in_seconds = int(time.time() - self.start_time)
         fitness = age_in_seconds
 
-        if self.length > 5:
-            # After reaching at least a length of 5, bonus fitness for speed in collecting food.
-            fitness += int(self.length / age_in_seconds)
+        if self.length > 3:
+            # After reaching at least a length of 3, bonus fitness for speed in collecting food.
+            fitness += int(self.length / age_in_seconds) * 2
 
         return fitness
 
@@ -147,11 +147,20 @@ class Snake(object):
                 elif x is 49:
                     # No collision within 10 cells. Mark safe
                     directions[i] = Vector(50, 50)
+
+        food_vector = self.food.position.sub(self.position)
+        dist_above = max(0, -food_vector.y)  # 50
+        dist_below = max(0, food_vector.y)  # 0
+        dist_left = max(0, -food_vector.x)  # 0
+        dist_right = max(0, food_vector.x)  # 20
+
+        max_dist = max(dist_below, dist_above, dist_right, dist_left)
+
         return [
-            self.food.position.y < self.position.y,
-            self.food.position.y > self.position.y,
-            self.food.position.x < self.position.x,
-            self.food.position.x > self.position.x,
+            dist_above / max_dist,
+            dist_below / max_dist,
+            dist_left / max_dist,
+            dist_right / max_dist,
             self.velocity.x,
             self.velocity.y,
             1 - (directions[0].x / 50),
