@@ -35,7 +35,7 @@ class Game(object):
         save_state = SaveState('saved-population.dat')
 
         # Display the first snakes brain in the HUD
-        network_display = NetworkDisplay(self.population.active_snake.brain, Vector(700, 80), Vector(300, 800), 10)
+        network_display = NetworkDisplay(self.population.active_snake.brain, Vector(700, 100), Vector(500, 900), 10)
         # Display generation history
         self.refresh_graphs()
 

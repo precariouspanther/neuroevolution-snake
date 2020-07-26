@@ -138,17 +138,23 @@ class NetworkDisplay(object):
         self.position = position
         self.dimensions = dimensions
         self.neuron_size = neuron_size
+        padding = 20
 
         neuron_vertical_spacing = int(self.neuron_size * 4)
 
         self.neuron_positions = []
+
+        width_per_layer = (self.dimensions.x - padding * 2) / len(self.network.layers)
+        max_neurons = max(*[layer.neurons for layer in self.network.layers])
+        height_per_neuron = (self.dimensions.y - padding * 2) / max_neurons
+
         # Neurons
         for i, layer in enumerate(self.network.layers):
             neuron_position_layer = []
-            x = self.position.x + int(self.dimensions.x / len(self.network.layers) * i)
-            y_offset = int((self.dimensions.y - layer.neurons * neuron_vertical_spacing) / 2)
+            x = int(self.position.x + padding + width_per_layer * i)
+            y_offset = ((max_neurons - layer.neurons) / 2) * height_per_neuron
             for neuron in range(0, layer.neurons):
-                y = self.position.y + y_offset + neuron * neuron_vertical_spacing
+                y = int(self.position.y + y_offset + neuron * height_per_neuron)
                 neuron_position_layer.append(Vector(x, y))
 
             self.neuron_positions.append(neuron_position_layer)

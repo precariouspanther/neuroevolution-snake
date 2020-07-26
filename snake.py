@@ -36,7 +36,7 @@ class Snake(object):
         self.length = max(1, length)
         self.grid = grid
         self.position = position
-        self.velocity = Vector(0, 0)
+        self.velocity = Vector(0, 1)
         self.tail = []
         self.alive = True
         self.brain = brain
@@ -47,14 +47,21 @@ class Snake(object):
         self.food = Food(self.grid, self)
 
     def think(self):
-        idea = self.brain.forward(self.senses())[0]
-        if idea[0] > 0.7:
+        ideas = self.brain.forward(self.senses())[0]
+        strongest_idea = 0
+        strongest_index = None
+        for i, idea in enumerate(ideas):
+            if idea > strongest_idea:
+                strongest_idea = idea
+                strongest_index = i
+
+        if strongest_index is 0:
             self.up()
-        elif idea[1] > 0.7:
+        elif strongest_index is 1:
             self.down()
-        elif idea[2] > 0.7:
+        elif strongest_index is 2:
             self.left()
-        elif idea[3] > 0.7:
+        elif strongest_index is 3:
             self.right()
 
     def move(self):
