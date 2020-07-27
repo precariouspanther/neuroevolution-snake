@@ -28,6 +28,7 @@ class Snake(object):
         self.hunger = 200
         self.fitness = 0
         self.food = Food(self.grid, self)
+        self.total_food_distance = 0
 
     def think(self):
         ideas = self.brain.forward(self.senses())[0]
@@ -47,6 +48,15 @@ class Snake(object):
         elif strongest_index is 3:
             self.right()
 
+    def eat(self):
+        self.grow()
+        self.hunger += 100
+        last_food = self.food.position.copy()
+        self.food.move()
+        if self.length > 2:
+            # we have travelled far, between foods. Keep track for fitness!
+            self.total_food_distance += last_food.dist(self.food.position)
+
     def move(self):
         if not self.alive:
             return
@@ -55,9 +65,7 @@ class Snake(object):
 
         if self.position.equals(self.food.position):
             # Nom.
-            self.grow()
-            self.hunger += 100
-            self.food.move()
+            self.eat()
 
         self.think()
 
@@ -111,11 +119,11 @@ class Snake(object):
         # Age in seconds. The longer you live, the better your fitness
         age_in_seconds = int(time.time() - self.start_time)
         fitness = self.age / 50
-        fitness += pow(self.length, 2)
+        fitness += pow(self.length, 3)
 
         if self.length > 3:
             # After reaching at least a length of 3, bonus fitness for speed in collecting food.
-            fitness += pow(int(self.length / age_in_seconds), 2)
+            fitness += pow(self.total_food_distance, 2)
 
         return fitness
 
@@ -149,7 +157,7 @@ class Snake(object):
         dist_left = max(0, -food_vector.x)  # 0
         dist_right = max(0, food_vector.x)  # 20
 
-        max_dist = max(dist_below, dist_above, dist_right, dist_left)
+        max_dist = max(dist_below, dist_above, dist_right, dist_left, 1)
 
         return [
             dist_above / max_dist,
