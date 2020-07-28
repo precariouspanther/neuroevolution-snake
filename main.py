@@ -9,7 +9,7 @@ class Game(object):
     def __init__(self):
         pygame.init()
 
-        self.display = pygame.display.set_mode((1700, 1000))
+        self.display = pygame.display.set_mode((1700, 1300))
 
         pygame.display.set_caption('smart snake')
         self.clock = pygame.time.Clock()
@@ -19,9 +19,9 @@ class Game(object):
         self.fitness_graph = None
         self.length_graph = None
         self.duration_graph = None
-        self.population = Population(1000, Vector(50, 50), 10, Vector(50, 50))
+        self.population = Population(1000, Vector(20, 20), 20, Vector(50, 50))
         self.pause = False
-        self.renderer = Renderer(pygame, self.display, self.population, 10, Vector(50, 50))
+        self.renderer = Renderer(pygame, self.display, self.population, self.population.cell_size, Vector(50, 50))
 
     def refresh_graphs(self):
         self.fitness_graph = self.graph_writer.draw([x['score'] for x in self.population.history], "Generation",
@@ -68,7 +68,7 @@ class Game(object):
                 True, (255, 255, 255))
             self.display.blit(value, [200, 0])
 
-            value = self.font.render("Best score: " + str(self.population.best_score), True, (255, 255, 255))
+            value = self.font.render("Best score: " + str(int(self.population.best_score)), True, (255, 255, 255))
             self.display.blit(value, [400, 0])
 
             value = self.font.render("Generation: " + str(self.population.generations), True, (255, 255, 255))
@@ -80,8 +80,9 @@ class Game(object):
             self.display.blit(value, [950, 0])
 
             if not self.pause:
-                self.population.move()
-            self.renderer.draw()
+                self.renderer.draw()
+            self.population.move()
+
             network_display.draw(pygame, self.display)
 
             self.display.blit(self.fitness_graph, (1200, 50))
@@ -89,7 +90,7 @@ class Game(object):
             self.display.blit(self.duration_graph, (1200, 452))
 
             pygame.display.update()
-            self.clock.tick(100)
+            self.clock.tick(40)
 
         pygame.quit()
         quit()

@@ -51,6 +51,7 @@ class Snake(object):
     def eat(self):
         self.grow()
         self.hunger += 100
+        self.hunger = min(self.hunger, 500)
         last_food = self.food.position.copy()
         self.food.move()
         if self.length > 2:
@@ -113,64 +114,56 @@ class Snake(object):
         self.velocity = Vector(1, 0)
 
     def calculate_fitness(self):
-        if self.length is 1:
-            return 0
-
-        # Age in seconds. The longer you live, the better your fitness
-        age_in_seconds = int(time.time() - self.start_time)
-        fitness = self.age / 50
-        fitness += pow(self.length, 3)
-
-        if self.length > 3:
-            # After reaching at least a length of 3, bonus fitness for speed in collecting food.
-            fitness += pow(self.total_food_distance, 2)
-
+        # Alternative FF inspired by https://www.youtube.com/watch?v=vhiO4WsHA6c
+        fitness = self.age + (pow(2, self.length) + pow(self.length, 2.1) * 500)
+        fitness -= pow(self.length, 1.2) * pow(0.25 * self.age, 1.3)
         return fitness
 
     def senses(self):
         # Scan for collisions within 50 cells in each direction
         directions = [
             Vector(-1, 0),
+            Vector(-1, -1),
             Vector(1, 0),
+            Vector(1, -1),
             Vector(0, -1),
-            Vector(0, 1)
+            Vector(1, 1),
+            Vector(0, 1),
+            Vector(-1, 1)
         ]
+        food_vision = [0 for x in range(0, len(directions))]
+        wall_vision = [0 for x in range(0, len(directions))]
+        self_vision = [0 for x in range(0, len(directions))]
 
         for i, direction in enumerate(directions):
             ray = self.position.copy()
-            for x in range(0, 50):
+            for x in range(0, self.grid.dimensions.x):
                 ray = ray.add(direction)
-                if self.is_collision(ray):
-                    # Collision found. Record it
-                    if ray.x + ray.y > self.position.x + self.position.y:
-                        directions[i] = ray.sub(self.position)
-                    else:
-                        directions[i] = self.position.sub(ray)
+
+                # Wall!
+                if ray.x < 0 or ray.y < 0 or ray.x > self.grid.dimensions.x - 1 or ray.y > self.grid.dimensions.y - 1:
+                    wall_vision[i] = 1
                     break
-                elif x is 49:
-                    # No collision within 10 cells. Mark safe
-                    directions[i] = Vector(50, 50)
+                # Food!
+                if ray.equals(self.food.position):
+                    food_vision[i] = 1
+                    break
+                # Self...
+                if self.is_collision(ray):
+                    self_vision[i] = 1
+                    break
 
-        food_vector = self.food.position.sub(self.position)
-        dist_above = max(0, -food_vector.y)  # 50
-        dist_below = max(0, food_vector.y)  # 0
-        dist_left = max(0, -food_vector.x)  # 0
-        dist_right = max(0, food_vector.x)  # 20
+        senses = []
+        for vision in [food_vision, wall_vision, self_vision]:
+            for direction in vision:
+                senses.append(direction)
 
-        max_dist = max(dist_below, dist_above, dist_right, dist_left, 1)
+        senses.append(int(-self.velocity.y > 0))
+        senses.append(int(self.velocity.y > 0))
+        senses.append(int(-self.velocity.x > 0))
+        senses.append(int(self.velocity.x > 0))
 
-        return [
-            dist_above / max_dist,
-            dist_below / max_dist,
-            dist_left / max_dist,
-            dist_right / max_dist,
-            self.velocity.x,
-            self.velocity.y,
-            1 - (directions[0].x / 50),
-            1 - (directions[1].x / 50),
-            1 - (directions[2].y / 50),
-            1 - (directions[3].y / 50),
-        ]
+        return senses
 
     def is_collision(self, position: Vector):
         for segment in self.tail:
