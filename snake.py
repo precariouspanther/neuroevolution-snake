@@ -2,7 +2,7 @@ import time
 
 from random import randint, random
 
-from neuralnetwork import NeuralNetwork, ReLU
+from neuralnetwork import NeuralNetwork
 from vector import Vector
 
 
@@ -120,7 +120,7 @@ class Snake(object):
         return fitness
 
     def senses(self):
-        # Scan for collisions within 50 cells in each direction
+        # Scan in 8 directions
         directions = [
             Vector(-1, 0),
             Vector(-1, -1),
@@ -136,27 +136,29 @@ class Snake(object):
         self_vision = [0 for x in range(0, len(directions))]
 
         for i, direction in enumerate(directions):
+            distance = 0
             ray = self.position.copy()
             for x in range(0, self.grid.dimensions.x):
                 ray = ray.add(direction)
+                distance += 1
 
                 # Wall!
                 if ray.x < 0 or ray.y < 0 or ray.x > self.grid.dimensions.x - 1 or ray.y > self.grid.dimensions.y - 1:
-                    wall_vision[i] = 1
+                    wall_vision[i] = distance
                     break
                 # Food!
                 if ray.equals(self.food.position):
-                    food_vision[i] = 1
-                    break
+                    food_vision[i] = distance
+                    continue
                 # Self...
                 if self.is_collision(ray):
-                    self_vision[i] = 1
+                    self_vision[i] = distance
                     break
 
         senses = []
         for vision in [food_vision, wall_vision, self_vision]:
             for direction in vision:
-                senses.append(direction)
+                senses.append(1 / max(1, direction))
 
         senses.append(int(-self.velocity.y > 0))
         senses.append(int(self.velocity.y > 0))
@@ -166,8 +168,8 @@ class Snake(object):
         return senses
 
     def is_collision(self, position: Vector):
-        for segment in self.tail:
-            if segment.equals(position):
+        for i, segment in enumerate(self.tail):
+            if segment.equals(position) and i is not len(self.tail):
                 return True
         if position.x < 0 or position.y < 0:
             return True
@@ -181,10 +183,10 @@ class Food(object):
         self.grid = grid
         self.snake = snake
         self.move()
-        self.position = Vector(randint(1, self.grid.dimensions.x - 1), randint(1, self.grid.dimensions.y - 1))
+        self.position = Vector(randint(0, self.grid.dimensions.x - 1), randint(0, self.grid.dimensions.y - 1))
 
     def move(self):
         while True:
-            self.position = Vector(randint(1, self.grid.dimensions.x - 1), randint(1, self.grid.dimensions.y - 1))
+            self.position = Vector(randint(0, self.grid.dimensions.x - 1), randint(0, self.grid.dimensions.y - 1))
             if not self.snake.is_collision(self.position):
                 return

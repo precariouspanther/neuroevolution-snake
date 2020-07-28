@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import expit
 
 
 class ReLU:
@@ -8,4 +9,4 @@ class ReLU:
 
 class Sigmoid:
     def forward(self, inputs):
-        return 1.0 / (1.0 + np.exp(-inputs))
+        return expit(inputs)

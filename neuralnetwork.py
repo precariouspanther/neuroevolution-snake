@@ -2,7 +2,10 @@ import copy
 
 import numpy as np
 import pygame
-from random import random, randint
+
+from genetic.activation import Sigmoid
+from genetic.crossover import SBC
+from genetic.mutation import gaussian
 from vector import Vector
 
 
@@ -33,57 +36,21 @@ class Layer(object):
         return Layer(self.inputs, self.neurons, self.activation, copy.deepcopy(self.weights),
                      copy.deepcopy(self.biases))
 
-    def mutate(self, rate):
-        def random_mutate(val, chance):
-            new_val = val
-            if random() < chance:
-                # chance to replace with random -1 to 1 number
-                new_val = val + ((random() * 2 - 1) / 5)
-            new_val = min(1, max(-1, new_val))
-
-            return new_val
-
-        new_biases = []
-        for bias in self.biases[0]:
-            new_biases.append(random_mutate(bias, rate))
-
-        new_weights = []
-        for neuron_weights in self.weights:
-            new_neuron_weights = []
-            for weight in neuron_weights:
-                new_neuron_weights.append(random_mutate(weight, rate))
-            new_weights.append(new_neuron_weights)
-
-        self.weights = np.array(new_weights)
-        self.biases = [new_biases]
+    def mutate(self, rate, scale):
+        self.biases = gaussian(self.biases, rate, scale)
+        self.biases.clip(-1, 1, self.biases)
+        self.weights = gaussian(self.weights, rate, scale)
+        self.weights.clip(-1, 1, self.weights)
 
     def crossover(self, father):
-        child = self.copy()
-        new_biases = []
-        father_bias_start = randint(0, len(self.biases[0]))
+        # Crossover using simulated binary crossover
+        c1_weights, c2_weights = SBC(self.weights, father.weights, 5)
+        c1_biases, c2_biases = SBC(self.biases, father.biases, 5)
 
-        for i, bias in enumerate(self.biases[0]):
-            if i >= father_bias_start:
-                new_biases.append(father.biases[0][i])
-            else:
-                new_biases.append(bias)
+        c1 = Layer(self.inputs, self.neurons, self.activation, c1_weights, c1_biases)
+        c2 = Layer(self.inputs, self.neurons, self.activation, c2_weights, c2_biases)
 
-        new_weights = []
-
-        for w, neuron_weights in enumerate(self.weights):
-            father_weight_start = randint(0, len(neuron_weights))
-            new_neuron_weights = []
-            for i, weight in enumerate(neuron_weights):
-                if i >= father_weight_start:
-                    new_neuron_weights.append(father.weights[w][i])
-                else:
-                    new_neuron_weights.append(weight)
-            new_weights.append(new_neuron_weights)
-
-        child.weights = np.array(new_weights)
-        child.biases = np.array([new_biases])
-
-        return child
+        return c1, c2
 
 
 class InputLayer(Layer):
@@ -92,22 +59,18 @@ class InputLayer(Layer):
         return self.output
 
 
-class ReLU:
-    def forward(self, inputs):
-        return np.maximum(0, inputs)
-
-
 class NeuralNetwork(object):
     def __init__(self, layers):
         self.layers = layers
 
     @classmethod
-    def create(cls, inputs: int, hidden_layers: int, hidden_nodes: int, outputs: int, activation):
-        layers = [InputLayer.random_layer(inputs, inputs, activation),
-                  Layer.random_layer(inputs, hidden_nodes, activation)]
-        for x in range(1, hidden_layers):
-            layers.append(Layer.random_layer(hidden_nodes, hidden_nodes, activation))
-        layers.append(Layer.random_layer(hidden_nodes, outputs, activation))
+    def create(cls, inputs: int, hidden_layers: list, outputs: int, activation):
+        layers = [InputLayer.random_layer(inputs, inputs, activation)]
+        next_inputs = inputs
+        for layer_neurons in hidden_layers:
+            layers.append(Layer.random_layer(next_inputs, layer_neurons, activation))
+            next_inputs = layer_neurons
+        layers.append(Layer.random_layer(next_inputs, outputs, Sigmoid()))
         return cls(layers)
 
     def add_layer(self, layer: Layer):
@@ -118,73 +81,20 @@ class NeuralNetwork(object):
             inputs = layer.forward(inputs)
         return inputs
 
-    def mutate(self, rate):
+    def mutate(self, rate, scale):
         for layer in self.layers:
-            layer.mutate(rate)
+            layer.mutate(rate, scale)
 
     def copy(self):
         return NeuralNetwork(copy.deepcopy(self.layers))
 
     def crossover(self, father):
-        child = self.copy()
-        for i, layer in enumerate(child.layers):
-            layer.crossover(father.layers[i])
-        return child
+        c1_layers = []
+        c2_layers = []
 
+        for mother_layer, father_layer in zip(self.layers, father.layers):
+            c1_layer, c2_layer = mother_layer.crossover(father_layer)
+            c1_layers.append(c1_layer)
+            c2_layers.append(c2_layer)
 
-class NetworkDisplay(object):
-    def __init__(self, network: NeuralNetwork, position: Vector, dimensions: Vector, neuron_size: int):
-        self.network = network
-        self.position = position
-        self.dimensions = dimensions
-        self.neuron_size = neuron_size
-        padding = 20
-
-        neuron_vertical_spacing = int(self.neuron_size * 4)
-
-        self.neuron_positions = []
-
-        width_per_layer = (self.dimensions.x - padding * 2) / len(self.network.layers)
-        max_neurons = max(*[layer.neurons for layer in self.network.layers])
-        height_per_neuron = (self.dimensions.y - padding * 2) / max_neurons
-
-        # Neurons
-        for i, layer in enumerate(self.network.layers):
-            neuron_position_layer = []
-            x = int(self.position.x + padding + width_per_layer * i)
-            y_offset = ((max_neurons - layer.neurons) / 2) * height_per_neuron
-            for neuron in range(0, layer.neurons):
-                y = int(self.position.y + y_offset + neuron * height_per_neuron)
-                neuron_position_layer.append(Vector(x, y))
-
-            self.neuron_positions.append(neuron_position_layer)
-
-    def draw(self, game: pygame, display):
-
-        # Draw weights
-        for i, layer in enumerate(self.neuron_positions):
-            for neuron_index, neuron in enumerate(layer):
-                if i is not 0:
-                    for weight_offset, weight in enumerate(self.network.layers[i].weights.T[neuron_index]):
-                        previous_layer = self.neuron_positions[i - 1]
-                        previous_neuron = previous_layer[weight_offset]
-                        line_strength = int(weight * 10)
-
-                        if line_strength < 0:
-                            colour = (100, -line_strength + 50, -line_strength + 50)
-                        else:
-                            colour = (line_strength + 50, line_strength + 50, 100)
-                        pygame.draw.line(display, colour, [neuron.x, neuron.y],
-                                         [previous_neuron.x, previous_neuron.y], 1)
-
-        # Draw neurons
-        for layer_index, layer in enumerate(self.neuron_positions):
-            for neuron_index, neuron in enumerate(layer):
-                pygame.draw.circle(display, (255, 255, 255), [neuron.x, neuron.y], self.neuron_size + 1)
-                state = self.network.layers[layer_index].get_neuron_state(neuron_index)
-                if state > 0:
-                    brightness = min(255, int(state * 255))
-                    pygame.draw.circle(display, (brightness, brightness, brightness), [neuron.x, neuron.y],
-                                       self.neuron_size)
-                else:
-                    pygame.draw.circle(display, (40, 40, 40), [neuron.x, neuron.y], self.neuron_size)
+        return NeuralNetwork(c1_layers), NeuralNetwork(c2_layers)

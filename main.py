@@ -1,7 +1,7 @@
 from graph import Graph
 from neuralnetwork import *
 from population import Population
-from renderer import Renderer
+from renderer import Renderer, NetworkDisplay
 from save import SaveState
 
 
@@ -24,10 +24,14 @@ class Game(object):
         self.renderer = Renderer(pygame, self.display, self.population, self.population.cell_size, Vector(50, 50))
 
     def refresh_graphs(self):
-        self.fitness_graph = self.graph_writer.draw([x['score'] for x in self.population.history], "Generation",
-                                                    "Fitness", "linear")
-        self.length_graph = self.graph_writer.draw([x['length'] for x in self.population.history], "Generation",
-                                                   "Length", "linear")
+        self.fitness_graph = self.graph_writer.draw_multiple(
+            {"top": [x['top_fitness'] for x in self.population.history],
+             "avg": [x['avg_fitness'] for x in self.population.history]}, "Generation",
+            "Fitness", "linear")
+        self.length_graph = self.graph_writer.draw_multiple(
+            {"top": [x['top_length'] for x in self.population.history],
+             "avg": [x['avg_length'] for x in self.population.history]}, "Generation",
+            "Length", "linear")
         self.duration_graph = self.graph_writer.draw([x['duration'] for x in self.population.history], "Generation",
                                                      "Seconds", "linear")
 
@@ -90,7 +94,7 @@ class Game(object):
             self.display.blit(self.duration_graph, (1200, 452))
 
             pygame.display.update()
-            self.clock.tick(40)
+            self.clock.tick(100)
 
         pygame.quit()
         quit()
