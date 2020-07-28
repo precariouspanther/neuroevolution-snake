@@ -114,9 +114,10 @@ class Snake(object):
         self.velocity = Vector(1, 0)
 
     def calculate_fitness(self):
+        score = self.length - 1
         # Alternative FF inspired by https://www.youtube.com/watch?v=vhiO4WsHA6c
-        fitness = self.age + (pow(2, self.length) + pow(self.length, 2.1) * 500)
-        fitness -= pow(self.length, 1.2) * pow(0.25 * self.age, 1.3)
+        fitness = self.age + (pow(2, score) + pow(score, 2.1) * 500)
+        fitness -= pow(score, 1.2) * pow(0.25 * self.age, 1.3)
         return fitness
 
     def senses(self):

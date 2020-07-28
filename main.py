@@ -27,7 +27,7 @@ class Game(object):
         self.fitness_graph = self.graph_writer.draw_multiple(
             {"top": [x['top_fitness'] for x in self.population.history],
              "avg": [x['avg_fitness'] for x in self.population.history]}, "Generation",
-            "Fitness", "linear")
+            "Fitness", "log")
         self.length_graph = self.graph_writer.draw_multiple(
             {"top": [x['top_length'] for x in self.population.history],
              "avg": [x['avg_length'] for x in self.population.history]}, "Generation",

@@ -44,8 +44,8 @@ class Layer(object):
 
     def crossover(self, father):
         # Crossover using simulated binary crossover
-        c1_weights, c2_weights = SBC(self.weights, father.weights, 5)
-        c1_biases, c2_biases = SBC(self.biases, father.biases, 5)
+        c1_weights, c2_weights = SBC(self.weights, father.weights, 100)
+        c1_biases, c2_biases = SBC(self.biases, father.biases, 100)
 
         c1 = Layer(self.inputs, self.neurons, self.activation, c1_weights, c1_biases)
         c2 = Layer(self.inputs, self.neurons, self.activation, c2_weights, c2_biases)
