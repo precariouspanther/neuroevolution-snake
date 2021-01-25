@@ -1,3 +1,5 @@
+import time
+
 from graph import Graph
 from neuralnetwork import *
 from population import Population
@@ -19,9 +21,11 @@ class Game(object):
         self.fitness_graph = None
         self.length_graph = None
         self.duration_graph = None
-        self.population = Population(1000, Vector(20, 20), 20, Vector(50, 50))
+        self.population = Population(1100, Vector(20, 20), 10)
         self.pause = False
         self.renderer = Renderer(pygame, self.display, self.population, self.population.cell_size, Vector(50, 50))
+        self.start_time = time.time()
+        self.backup_saver = None
 
     def refresh_graphs(self):
         self.fitness_graph = self.graph_writer.draw_multiple(
@@ -34,6 +38,15 @@ class Game(object):
             "Length", "linear")
         self.duration_graph = self.graph_writer.draw([x['duration'] for x in self.population.history], "Generation",
                                                      "Seconds", "linear")
+
+        # Write history backup
+        if self.population.best_length > 10:
+            if self.backup_saver:
+                self.backup_saver.delete()
+            self.backup_saver = SaveState(
+                'history/saved-' + str(self.population.generations) + ' - ' + str(
+                    self.population.best_length) + ' - ' + str(int(self.population.start_time)) + '.dat')
+            self.backup_saver.save(self.population.save_data())
 
     def gameLoop(self):
         exit_game = False
@@ -62,6 +75,7 @@ class Game(object):
                         else:
                             self.pause = True
                     elif event.key == pygame.K_F2:
+                        self.start_time = time.time()
                         self.population.load_data(save_state.open())
                         network_display.network = self.population.active_snake.brain
 
@@ -94,7 +108,7 @@ class Game(object):
             self.display.blit(self.duration_graph, (1200, 452))
 
             pygame.display.update()
-            self.clock.tick(100)
+            self.clock.tick()
 
         pygame.quit()
         quit()

@@ -9,7 +9,7 @@ from vector import Vector
 
 
 class Population(object):
-    def __init__(self, snake_count: int, grid_size: Vector, cell_size: int, position: Vector):
+    def __init__(self, snake_count: int, grid_size: Vector, cell_size: int):
         self.start_time = time.time()
         self.duration = 0
         self.best_length = 0
@@ -18,13 +18,12 @@ class Population(object):
         self.snake_count = snake_count
         self.grid_size = grid_size
         self.cell_size = cell_size
-        self.position = position
         self.generations = 1
-        self.grid = Grid(grid_size, position, cell_size)
+        self.grid = Grid(grid_size, cell_size)
         relu = ReLU()
-        self.snakes = [Snake(self.grid, Vector(10 + randint(0, self.grid.dimensions.x - 20),
-                                               10 + randint(0, self.grid.dimensions.y - 20)),
-                             NeuralNetwork.create(28, [20, 12], 4, relu)) for x in range(0, snake_count)]
+        self.snakes = [Snake(self.grid, Vector(1 + randint(0, self.grid.dimensions.x - 2),
+                                               1 + randint(0, self.grid.dimensions.y - 2)),
+                             NeuralNetwork.create(28, [20, 20], 4, relu)) for x in range(0, snake_count)]
         self.active_snake = self.snakes[0]
         self.all_time_best_snake = self.active_snake
         self.history = []
@@ -74,8 +73,8 @@ class Population(object):
             self.best_score = best_snake.fitness
             self.all_time_best_snake = deepcopy(best_snake)
 
-        # Keep top 100 snakes
-        snakes = snakes[0:100]
+        # Keep top 500 snakes
+        snakes = snakes[0:500]
 
         # normalise fitness scores
         top_fitness = best_snake.fitness
@@ -101,49 +100,48 @@ class Population(object):
         self.start_time = time.time()
         self.best_current_length = 0
 
-        # Next generation snakes. A clone of the best from the last generation and all time
-        # best are always included
-        self.snakes = [
-            Snake(self.grid, Vector(3 + randint(0, self.grid.dimensions.x - 6),
-                                    3 + randint(0, self.grid.dimensions.y - 6)), best_snake.brain),
-            Snake(self.grid, Vector(3 + randint(0, self.grid.dimensions.x - 6),
-                                    3 + randint(0, self.grid.dimensions.y - 6)), self.all_time_best_snake.brain)
-        ]
+        # Top 100 snakes from the last generation are always included in the next
+        self.snakes = [Snake(self.grid, Vector(1 + randint(0, self.grid.dimensions.x - 2),
+                                               1 + randint(0, self.grid.dimensions.y - 2)), snake.brain)
+                       for snake in snakes[0:100]]
+
+        # Scale mutation based on how close we are getting to 100%
+        mutation_scale = 0.5
+        if best_snake.length > self.grid.dimensions.x * self.grid.dimensions.y - 5:
+            mutation_scale = 0.1
 
         # Baby snakes!
-        for i in range(0, int(self.snake_count / 2)):
+        for i in range(0, int((self.snake_count - len(self.snakes)) / 2)):
             mother = self.select_parent(total_fitness, snakes)
             father = self.select_parent(total_fitness, snakes)
             brother_brain, sister_brain = mother.brain.crossover(father.brain)
-            brother_brain.mutate(0.05, 0.2)
-            sister_brain.mutate(0.05, 0.2)
-            self.snakes.append(Snake(self.grid, Vector(3 + randint(0, self.grid.dimensions.x - 6),
-                                                       3 + randint(0, self.grid.dimensions.y - 6)), brother_brain))
-            self.snakes.append(Snake(self.grid, Vector(3 + randint(0, self.grid.dimensions.x - 6),
-                                                       3 + randint(0, self.grid.dimensions.y - 6)), sister_brain))
+            brother_brain.mutate(0.02, mutation_scale)
+            sister_brain.mutate(0.02, mutation_scale)
+            self.snakes.append(Snake(self.grid, Vector(1 + randint(0, self.grid.dimensions.x - 2),
+                                                       1 + randint(0, self.grid.dimensions.y - 2)), brother_brain))
+            self.snakes.append(Snake(self.grid, Vector(1 + randint(0, self.grid.dimensions.x - 2),
+                                                       1 + randint(0, self.grid.dimensions.y - 2)), sister_brain))
 
+        self.snakes.append(Snake(self.grid, Vector(1 + randint(0, self.grid.dimensions.x - 2),
+                                                   1 + randint(0, self.grid.dimensions.y - 2)), self.all_time_best_snake.brain))
         self.generations += 1
         self.active_snake = self.snakes[0]
         self.on_generation()
 
     def select_parent(self, total_fitness, snakes):
 
-        return choice(snakes)
-        '''rand_fitness = random() * total_fitness
-        if random() > 0.5:
-            # Additional bias towards stronger parents
-            rand_fitness /= 2
+        rand_fitness = random() * total_fitness
         sum = 0
         for snake in snakes:
             sum += snake.fitness
             if sum > rand_fitness:
                 return snake
-        return snakes[0]'''
+        return snakes[0]
 
     def save_data(self):
         return (
             self.snakes, self.history, self.best_length, self.best_score, self.generations, self.all_time_best_snake,
-            self.active_snake)
+            self.active_snake, self.start_time)
 
     def load_data(self, data):
         self.snakes = data[0]
@@ -153,3 +151,4 @@ class Population(object):
         self.generations = data[4]
         self.all_time_best_snake = data[5]
         self.active_snake = data[6]
+        self.start_time = data[7]

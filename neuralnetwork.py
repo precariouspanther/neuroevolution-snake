@@ -4,7 +4,7 @@ import numpy as np
 import pygame
 
 from genetic.activation import Sigmoid
-from genetic.crossover import SBC
+from genetic.crossover import SBC, random_crossover
 from genetic.mutation import gaussian
 from vector import Vector
 
@@ -43,9 +43,8 @@ class Layer(object):
         self.weights.clip(-1, 1, self.weights)
 
     def crossover(self, father):
-        # Crossover using simulated binary crossover
-        c1_weights, c2_weights = SBC(self.weights, father.weights, 100)
-        c1_biases, c2_biases = SBC(self.biases, father.biases, 100)
+        c1_weights, c2_weights = random_crossover(self.weights, father.weights, 100)
+        c1_biases, c2_biases = random_crossover(self.biases, father.biases, 100)
 
         c1 = Layer(self.inputs, self.neurons, self.activation, c1_weights, c1_biases)
         c2 = Layer(self.inputs, self.neurons, self.activation, c2_weights, c2_biases)

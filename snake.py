@@ -8,10 +8,9 @@ from vector import Vector
 
 # The grid a single snake lives on
 class Grid(object):
-    def __init__(self, dimensions: Vector, position: Vector, cell_size=10):
+    def __init__(self, dimensions: Vector, cell_size=10):
         self.dimensions = dimensions
         self.cell_size = cell_size
-        self.position = position
 
 
 class Snake(object):
@@ -25,10 +24,11 @@ class Snake(object):
         self.brain = brain
         self.age = 0
         self.start_time = time.time()
-        self.hunger = 200
+        self.hunger = 5 * (self.grid.dimensions.x + self.grid.dimensions.y)
         self.fitness = 0
         self.food = Food(self.grid, self)
         self.total_food_distance = 0
+        self.visited = set()
 
     def think(self):
         ideas = self.brain.forward(self.senses())[0]
@@ -50,8 +50,8 @@ class Snake(object):
 
     def eat(self):
         self.grow()
-        self.hunger += 100
-        self.hunger = min(self.hunger, 500)
+        self.hunger = (self.grid.dimensions.x * self.grid.dimensions.y)
+        #self.hunger = min(self.hunger, 500)
         last_food = self.food.position.copy()
         self.food.move()
         if self.length > 2:
@@ -63,6 +63,10 @@ class Snake(object):
             return
         self.age += 1
         self.hunger -= 1
+
+        if self.length == self.grid.dimensions.x * self.grid.dimensions.y:
+            # Win!
+            self.die()
 
         if self.position.equals(self.food.position):
             # Nom.
@@ -85,6 +89,7 @@ class Snake(object):
         while len(self.tail) >= self.length:
             self.tail.pop(0)
         self.tail.append(new_position)
+        self.visited.add(self.position)
 
     def grow(self):
         self.length += 1
@@ -115,9 +120,15 @@ class Snake(object):
 
     def calculate_fitness(self):
         score = self.length - 1
-        # Alternative FF inspired by https://www.youtube.com/watch?v=vhiO4WsHA6c
-        fitness = self.age + (pow(2, score) + pow(score, 2.1) * 500)
-        fitness -= pow(score, 1.2) * pow(0.25 * self.age, 1.3)
+        # Fitness is primarily the score we achieved (how many apples) + how long we managed to stay alive
+        fitness = min(self.age, (2 ** score)) + (2 ** score)
+        # How many cells did we explore
+        fitness += len(self.visited) ** 2
+
+        if self.length == self.grid.dimensions.x * self.grid.dimensions.y:
+            # Big bonus for winning
+            fitness += score ** 2
+
         return fitness
 
     def senses(self):
@@ -157,15 +168,19 @@ class Snake(object):
                     break
 
         senses = []
-        for vision in [food_vision, wall_vision, self_vision]:
+        for direction in food_vision:
+            senses.append(1 / max(1, direction))
+
+        for vision in [wall_vision, self_vision]:
             for direction in vision:
-                senses.append(1 / max(1, direction))
+                senses.append(int(direction is 1))
 
         senses.append(int(-self.velocity.y > 0))
         senses.append(int(self.velocity.y > 0))
         senses.append(int(-self.velocity.x > 0))
         senses.append(int(self.velocity.x > 0))
 
+        #senses.append(min(self.length, 100) / 100)
         return senses
 
     def is_collision(self, position: Vector):
@@ -187,7 +202,11 @@ class Food(object):
         self.position = Vector(randint(0, self.grid.dimensions.x - 1), randint(0, self.grid.dimensions.y - 1))
 
     def move(self):
+        x = 0
         while True:
+            x += 1
+            if x > 100:
+                return
             self.position = Vector(randint(0, self.grid.dimensions.x - 1), randint(0, self.grid.dimensions.y - 1))
             if not self.snake.is_collision(self.position):
                 return

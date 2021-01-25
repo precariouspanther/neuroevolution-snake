@@ -1,3 +1,4 @@
+import os
 import pickle
 
 
@@ -13,3 +14,6 @@ class SaveState(object):
         with open(self.path, 'rb') as handle:
             b = pickle.load(handle)
         return b
+
+    def delete(self):
+        os.unlink(self.path)
